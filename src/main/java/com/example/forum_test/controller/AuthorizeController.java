@@ -2,6 +2,8 @@ package com.example.forum_test.controller;
 
 import com.example.forum_test.dto.AccessTokenDTO;
 import com.example.forum_test.dto.GithubUserDTO;
+import com.example.forum_test.mapper.UserMapper;
+import com.example.forum_test.model.User;
 import com.example.forum_test.provider.GithubProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.UUID;
 
 @Controller
 public class AuthorizeController {
+    @Autowired
+    private UserMapper userMapper;
     @Autowired
     public GithubProvider githubProvider;
     @Value("${github.client.id}")
@@ -34,10 +39,17 @@ public class AuthorizeController {
         accessTokenDTO.setClient_id(clientId);
         accessTokenDTO.setClient_secret(clientSecret);
         String accessToken = githubProvider.getAccessToken(accessTokenDTO);
-        GithubUserDTO user = githubProvider.getUser(accessToken);
-        if(user!=null){
+        GithubUserDTO githubUser = githubProvider.getUser(accessToken);
+        if(githubUser!=null){
             //登录成功，写cookie和session
-            req.getSession().setAttribute("user",user);
+            req.getSession().setAttribute("user",githubUser);
+            User user=new User();
+            user.setToken(UUID.randomUUID().toString());
+            user.setName(githubUser.getName());
+            user.setAccountId(String.valueOf(githubUser.getId()));
+            user.setGmtCreate(System.currentTimeMillis());
+            user.setGmtModified(user.getGmtCreate());
+            userMapper.insert(user);
             return "redirect:/";
         }else {
             //登录失败
