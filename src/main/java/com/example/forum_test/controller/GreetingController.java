@@ -18,6 +18,9 @@ public class GreetingController {
     @GetMapping("/")
     public String index(HttpServletRequest req) {
         Cookie[] cookies = req.getCookies();
+        if(cookies==null){
+            return "index";
+        }
         for (Cookie cookie:cookies){
             if(cookie.getName().equals("token")){
                 String token = cookie.getValue();
@@ -28,7 +31,6 @@ public class GreetingController {
                 break;
             }
         }
-
 
         return "index";
     }
